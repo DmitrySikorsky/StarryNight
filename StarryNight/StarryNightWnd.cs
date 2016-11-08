@@ -18,6 +18,7 @@ namespace StarryNight
     private HookHelper hookHelper;
     private int x;
     private int y;
+    private float displayScale;
 
     public StarryNightWnd()
     {
@@ -128,8 +129,8 @@ namespace StarryNight
     private void hookManager_MouseMove(object sender, MouseEventArgs e)
     {
       // Save current mouse position
-      this.x = e.X;
-      this.y = e.Y;
+      this.x = (int)(e.X / this.displayScale);
+      this.y = (int)(e.Y / this.displayScale);
     }
 
     private void hookManager_MouseClick(object sender, MouseEventArgs e)
@@ -171,6 +172,9 @@ namespace StarryNight
     {
       base.OnShown(e);
 
+      // Set display scale
+      this.displayScale = this.GetDisplayScale();
+
       // Set global mouse events hook
       if (!this.hookHelper.SetHook())
         MessageBox.Show("В процессе инициализации произошла ошибка!", "Ошибка", MessageBoxButtons.OK);
@@ -186,7 +190,7 @@ namespace StarryNight
       e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
       e.Graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
 
-      // Обходим все объекты-звездочки из списка и выводим их на экран
+      // Enumerate all stars and display them
       foreach (Star star in this.stars)
       {
         int x = star.x - star.size / 2;
@@ -259,6 +263,17 @@ namespace StarryNight
 
       // Set new window styles
       User32.SetWindowLong(this.Handle, WinUser.GWL_EXSTYLE, dwExStyle);
+    }
+
+    private float GetDisplayScale()
+    {
+      Graphics g = Graphics.FromHwnd(IntPtr.Zero);
+      IntPtr hDC = g.GetHdc();
+      int logicalScreenHeight = Gdi32.GetDeviceCaps(hDC, (int)DeviceCap.VERTRES);
+      int physicalScreenHeight = Gdi32.GetDeviceCaps(hDC, (int)DeviceCap.DESKTOPVERTRES);
+      float screenScalingFactor = (float)physicalScreenHeight / (float)logicalScreenHeight;
+
+      return screenScalingFactor;
     }
 
     private string GetStarText()
